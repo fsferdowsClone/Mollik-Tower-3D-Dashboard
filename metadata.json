@@ -1,0 +1,6 @@
+{
+  "name": "Mollik Tower 3D Dashboard",
+  "description": "An interactive, photorealistic 3D architectural blueprint and specifications dashboard for Mollik Tower, featuring a highly detailed procedural terracotta louver grid, dual support canopy pillars, interior emissives, and an immersive Dhaka cityscape background.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
