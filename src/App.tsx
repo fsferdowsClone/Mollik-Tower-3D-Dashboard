@@ -20,6 +20,7 @@ import {
   Activity, 
   Building2, 
   Camera,
+  Ruler,
   Compass as Landmark 
 } from "lucide-react";
 
@@ -50,6 +51,8 @@ export default function App() {
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [thermalOverlayActive, setThermalOverlayActive] = useState<boolean>(false);
+  const [isMetric, setIsMetric] = useState<boolean>(true);
+  const [seasonMode, setSeasonMode] = useState<"summer" | "winter">("summer");
 
   // States for interactive engineering visualizer overlays
   const [constructionPhase, setConstructionPhase] = useState<"foundation" | "structure" | "facade" | "finishing">("finishing");
@@ -141,6 +144,8 @@ export default function App() {
           constructionPhase={constructionPhase}
           shadowAnalysisActive={shadowAnalysisActive}
           windTunnelActive={windTunnelActive}
+          isMetric={isMetric}
+          seasonMode={seasonMode}
         />
       </div>
 
@@ -172,6 +177,17 @@ export default function App() {
 
           {/* Quick Actions */}
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsMetric(!isMetric)}
+              title={isMetric ? "Switch to Imperial (Feet)" : "Switch to Metric (Meters)"}
+              className="px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-700 hover:border-cyan-500 hover:text-cyan-600 hover:bg-slate-100 transition-all cursor-pointer flex items-center space-x-1.5"
+            >
+              <Ruler className="w-3.5 h-3.5 text-cyan-600 animate-pulse" />
+              <span className="text-[9px] font-mono font-bold uppercase">
+                {isMetric ? "METRIC (M)" : "IMPERIAL (FT)"}
+              </span>
+            </button>
+
             <button
               onClick={handleCaptureSnapshot}
               title="Capture Snapshot (JPEG)"
@@ -257,12 +273,12 @@ export default function App() {
             {/* Core Tech Table */}
             <div className="space-y-1.5 text-[9px] font-mono">
               {[
-                { label: "HEIGHT", val: "72.00 METERS", color: "text-slate-700" },
+                { label: "HEIGHT", val: isMetric ? "72.00 METERS" : "236.22 FEET", color: "text-slate-700" },
                 { label: "STRUCTURE", val: "C40 CONCRETE SHEAR WALLS", color: "text-slate-700" },
                 { label: "CURTAIN WALL", val: "SKY-BLUE TRIPLE-SILVER LOW-E", color: "text-cyan-700" },
                 { label: "LOUVERS", val: "ANODIZED ARCHITECTURAL BRONZE", color: "text-amber-700" },
                 { label: "PODIUM BASE", val: "CRIMSON PERFORATED ACP", color: "text-red-700" },
-                { label: "WIND / SEISMIC", val: "150 mph / ZONE 3 (BNBC)", color: "text-teal-700" }
+                { label: "WIND / SEISMIC", val: isMetric ? "241 km/h / ZONE 3 (BNBC)" : "150 mph / ZONE 3 (BNBC)", color: "text-teal-700" }
               ].map((spec, sidx) => (
                 <div key={sidx} className="flex justify-between items-center bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
                   <span className="text-slate-400 font-bold uppercase">{spec.label}</span>
@@ -627,6 +643,65 @@ export default function App() {
 
             <div className="border-t border-slate-150 my-1"></div>
 
+            {/* Climate Control Section */}
+            <div className="space-y-3 p-1">
+              <div className="flex items-center space-x-1.5 text-[9px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+                <Sun className="w-3 h-3 text-cyan-600 animate-spin-slow" />
+                <span>Climate Control</span>
+              </div>
+              
+              <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl shadow-sm space-y-2">
+                <span className="text-[8px] font-mono text-slate-500 uppercase block tracking-wider font-bold">Seasonal Solar Simulation</span>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSeasonMode("summer")}
+                    className={`py-1.5 px-2 text-[9px] font-mono uppercase rounded-xl border text-center transition-all cursor-pointer ${
+                      seasonMode === "summer"
+                        ? "bg-amber-50 border-amber-500 text-amber-700 font-bold shadow-sm"
+                        : "bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Summer
+                  </button>
+                  <button
+                    onClick={() => setSeasonMode("winter")}
+                    className={`py-1.5 px-2 text-[9px] font-mono uppercase rounded-xl border text-center transition-all cursor-pointer ${
+                      seasonMode === "winter"
+                        ? "bg-sky-50 border-sky-400 text-sky-700 font-bold shadow-sm"
+                        : "bg-white border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    Winter
+                  </button>
+                </div>
+
+                {/* Season statistics panel */}
+                <div className="bg-white rounded-lg p-2 border border-slate-100 space-y-1 text-[8px] font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">SOLAR INTENSITY:</span>
+                    <span className={`${seasonMode === "summer" ? "text-amber-600" : "text-sky-600"} font-bold`}>
+                      {seasonMode === "summer" ? "980 W/m²" : "620 W/m²"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">ZENITH ANGLE:</span>
+                    <span className="text-slate-600 font-bold">
+                      {seasonMode === "summer" ? "88°" : "41°"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">AMBIENT BASELINE:</span>
+                    <span className="text-slate-600 font-bold">
+                      {seasonMode === "summer" ? "34°C" : "18°C"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-150 my-1"></div>
+
             {/* VR Immersion Walk-Through */}
             <button
               onClick={() => setVrModeActive(!vrModeActive)}
@@ -789,6 +864,7 @@ export default function App() {
         <BlueprintModal
           floorNum={selectedFloorPlan.floorNum}
           floorName={selectedFloorPlan.floorName}
+          isMetric={isMetric}
           onClose={() => setSelectedFloorPlan(null)}
         />
       )}

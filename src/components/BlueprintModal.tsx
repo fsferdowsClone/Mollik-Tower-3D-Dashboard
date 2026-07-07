@@ -5,9 +5,10 @@ interface BlueprintModalProps {
   floorNum: number;
   floorName: string;
   onClose: () => void;
+  isMetric?: boolean;
 }
 
-export default function BlueprintModal({ floorNum, floorName, onClose }: BlueprintModalProps) {
+export default function BlueprintModal({ floorNum, floorName, onClose, isMetric = true }: BlueprintModalProps) {
   // Allow user to toggle between different floors from within the blueprint viewer!
   const [currentLevel, setCurrentLevel] = useState<number>(floorNum);
   const [isSplitView, setIsSplitView] = useState<boolean>(false);
@@ -17,6 +18,26 @@ export default function BlueprintModal({ floorNum, floorName, onClose }: Bluepri
   // States for new requested features
   const [compareWithBelow, setCompareWithBelow] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"sheets" | "legend">("sheets");
+
+  const formatHeight = (hStr: string) => {
+    const num = parseFloat(hStr);
+    if (isNaN(num)) return hStr;
+    if (isMetric) {
+      return `${num.toFixed(2)} Meters`;
+    } else {
+      return `${(num * 3.28084).toFixed(2)} Feet`;
+    }
+  };
+
+  const formatArea = (aStr: string) => {
+    const num = parseFloat(aStr.replace(/,/g, ""));
+    if (isNaN(num)) return aStr;
+    if (isMetric) {
+      return `${num.toLocaleString()} m²`;
+    } else {
+      return `${Math.round(num * 10.7639).toLocaleString()} sq ft`;
+    }
+  };
 
   // Derive floor details based on active selected level
   const getFloorDetails = (level: number) => {
@@ -670,7 +691,15 @@ export default function BlueprintModal({ floorNum, floorName, onClose }: Bluepri
                           <Maximize2 className="w-3.5 h-3.5 text-cyan-600" />
                           <span>GROSS BUILT AREA</span>
                         </div>
-                        <span className="text-slate-800 font-bold">{activeDetails.area}</span>
+                        <span className="text-slate-800 font-bold">{formatArea(activeDetails.area)}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] font-mono">
+                        <div className="flex items-center space-x-1.5 text-slate-400">
+                          <Layers className="w-3.5 h-3.5 text-blue-600" />
+                          <span>CEILING HEIGHT</span>
+                        </div>
+                        <span className="text-slate-800 font-bold">{formatHeight(activeDetails.height)}</span>
                       </div>
 
                       <div className="flex items-center justify-between text-[11px] font-mono">
@@ -816,7 +845,7 @@ export default function BlueprintModal({ floorNum, floorName, onClose }: Bluepri
 
               {/* Bottom Scale ruler */}
               <div className="bg-white px-6 py-3.5 border-t border-slate-150 text-[9px] font-mono text-slate-400 flex justify-between items-center shadow-sm">
-                <span>SCALE: 1:150 METRIC SYSTEM</span>
+                <span>SCALE: 1:150 {isMetric ? "METRIC SYSTEM" : "IMPERIAL SYSTEM"}</span>
                 <span>COORDINATES: CENTRAL ALIGNMENT (0.00, 0.00)</span>
                 <span>SHEET: AD-201-{currentLevel}</span>
               </div>

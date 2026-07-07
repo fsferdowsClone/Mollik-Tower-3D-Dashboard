@@ -17,6 +17,8 @@ interface ThreeCanvasProps {
   constructionPhase?: "foundation" | "structure" | "facade" | "finishing";
   shadowAnalysisActive?: boolean;
   windTunnelActive?: boolean;
+  isMetric?: boolean;
+  seasonMode?: "summer" | "winter";
 }
 
 export default function ThreeCanvas({
@@ -34,6 +36,8 @@ export default function ThreeCanvas({
   constructionPhase = "finishing",
   shadowAnalysisActive = false,
   windTunnelActive = false,
+  isMetric = true,
+  seasonMode = "summer",
 }: ThreeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,8 +112,13 @@ export default function ThreeCanvas({
       scene.background = new THREE.Color("#090d16"); // Elegant dark wireframe space
       scene.fog = new THREE.FogExp2("#090d16", 0.015);
     } else {
-      scene.background = new THREE.Color("#f1f5f9"); // Professional light slate CAD background
-      scene.fog = new THREE.FogExp2("#f1f5f9", 0.01);
+      if (seasonMode === "summer") {
+        scene.background = new THREE.Color("#fdfaf2"); // Warm sun-glowing background
+        scene.fog = new THREE.FogExp2("#fdfaf2", 0.008); // Thin soft summer heat haze
+      } else {
+        scene.background = new THREE.Color("#e2e8f0"); // Cool slate gray winter background
+        scene.fog = new THREE.FogExp2("#e2e8f0", 0.015); // Thicker cold mist
+      }
     }
 
     // 2. CAMERA SETUP
@@ -183,10 +192,17 @@ export default function ThreeCanvas({
         directionalLight.intensity = 1.2;
         renderer.toneMapping = THREE.NoToneMapping;
       } else {
-        ambientLight.color.setHex(0xe2e8f0); // Crisp light slate ambient
-        ambientLight.intensity = 0.85; // Clean, high-contrast ambient fill
-        directionalLight.color.setHex(0xffffff); // Natural pure white sunlight
-        directionalLight.intensity = 1.95;
+        if (seasonMode === "summer") {
+          ambientLight.color.setHex(0xfef3c7); // Warm solar ambient
+          ambientLight.intensity = 1.05; // Intense summer fill
+          directionalLight.color.setHex(0xfffbeb); // Warm direct sunlight
+          directionalLight.intensity = 2.4; // High summer sun
+        } else {
+          ambientLight.color.setHex(0xc0cbdc); // Cool grey-blue ambient
+          ambientLight.intensity = 0.7; // Soft desaturated fill
+          directionalLight.color.setHex(0xdbeafe); // Soft steel-blue winter sun
+          directionalLight.intensity = 1.4; // Weaker winter sun
+        }
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.0;
       }
@@ -297,40 +313,83 @@ export default function ThreeCanvas({
       switch (type) {
         case "curtain-glass": {
           // Preset color mappings - Desaturated and realistic architectural tints
-          let glassColor = 0x1a2c3b; // default warm golden-hour sky reflective tint
           let glassRoughness = 0.1;
           let glassMetalness = 0.9;
           let glassTransmission = 0.6;
           let glassOpacity = 0.85;
 
           if (glassPreset === "emerald") {
-            glassColor = 0x2e4a43; // Spruce Teal / Emerald Low-E
             glassRoughness = 0.08;
             glassMetalness = 0.94;
             glassTransmission = 0.3;
             glassOpacity = 0.9;
           } else if (glassPreset === "gold") {
-            glassColor = 0xbaa487; // Matte Champagne Gold Reflective
             glassRoughness = 0.08;
             glassMetalness = 0.98;
             glassTransmission = 0.35;
             glassOpacity = 0.85;
           } else if (glassPreset === "dark-obsidian") {
-            glassColor = 0x1b222d; // Dark Anthracite/Obsidian Glass
             glassRoughness = 0.02;
             glassMetalness = 0.95;
             glassTransmission = 0.15;
             glassOpacity = 0.92;
           } else if (glassPreset === "copper") {
-            glassColor = 0xad826b; // Luxury Anodized Copper Reflective
             glassRoughness = 0.05;
             glassMetalness = 0.97;
             glassTransmission = 0.32;
             glassOpacity = 0.86;
           }
 
+          // Create an ultra-premium procedural gradient texture
+          const canvas = document.createElement("canvas");
+          canvas.width = 16;
+          canvas.height = 512;
+          const ctx = canvas.getContext("2d");
+          let gradTex: THREE.CanvasTexture | undefined;
+          
+          if (ctx) {
+            const gradient = ctx.createLinearGradient(0, 512, 0, 0); // Vertical gradient from bottom to top
+            
+            let bottomColor = "#0f172a"; // Deep navy
+            let middleColor = "#1e293b"; 
+            let topColor = "#38bdf8";    // Bright sky blue
+            
+            if (glassPreset === "emerald") {
+              bottomColor = "#064e3b"; // Forest emerald
+              middleColor = "#115e59";
+              topColor = "#2dd4bf";    // Bright mint teal
+            } else if (glassPreset === "gold") {
+              bottomColor = "#451a03"; // Rich brown
+              middleColor = "#78350f";
+              topColor = "#fbbf24";    // Glowing amber gold
+            } else if (glassPreset === "dark-obsidian") {
+              bottomColor = "#020617"; // Black anthracite
+              middleColor = "#0f172a";
+              topColor = "#64748b";    // Cool steel grey
+            } else if (glassPreset === "copper") {
+              bottomColor = "#431407"; // Dark copper
+              middleColor = "#7c2d12";
+              topColor = "#f97316";    // Bright orange copper
+            } else if (glassPreset === "sky-blue") {
+              bottomColor = "#0c4a6e"; // Deep ocean blue
+              middleColor = "#0369a1";
+              topColor = "#7dd3fc";    // Soft electric sky
+            }
+
+            gradient.addColorStop(0.0, bottomColor);
+            gradient.addColorStop(0.4, middleColor);
+            gradient.addColorStop(1.0, topColor);
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 16, 512);
+            
+            gradTex = new THREE.CanvasTexture(canvas);
+            gradTex.wrapS = THREE.ClampToEdgeWrapping;
+            gradTex.wrapT = THREE.ClampToEdgeWrapping;
+          }
+
           const mat = new THREE.MeshPhysicalMaterial({
-            color: new THREE.Color(glassColor),
+            map: gradTex || null,
             roughness: glassRoughness,
             metalness: glassMetalness,
             transmission: glassTransmission,
@@ -670,18 +729,88 @@ export default function ThreeCanvas({
     }
 
     // --- 5. MAIN GLASS TOWER BODY (Stories 5-17) ---
-    const towerMesh = new THREE.Mesh(towerGeo, curtainGlassMat);
-    towerMesh.position.set(0, 8 + coreHeight / 2, 0);
-    towerMesh.castShadow = true;
-    towerMesh.receiveShadow = true;
-    towerMesh.userData = {
-      name: "Low-E Triple Silver DGU Glass Curtain Wall",
-      material: "6mm high-performance reflective double glazed units (argon-insulated)",
-      rating: "SHGC: 0.28, U-Value: 1.4 W/m²K. Exceeds standard commercial green building parameters."
+    const leftGlassGeo = new THREE.BoxGeometry(0.1, coreHeight, 8);
+    const rightGlassGeo = new THREE.BoxGeometry(0.1, coreHeight, 8);
+    const backGlassGeo = new THREE.BoxGeometry(8, coreHeight, 0.1);
+    const frontGlassGeo = new THREE.BoxGeometry(8, coreHeight, 0.1);
+    const frontColumnGeo = new THREE.BoxGeometry(0.8, coreHeight, 0.9);
+    
+    geometriesToDispose.push(leftGlassGeo, rightGlassGeo, backGlassGeo, frontGlassGeo, frontColumnGeo);
+
+    const leftGlassMesh = new THREE.Mesh(leftGlassGeo, curtainGlassMat);
+    leftGlassMesh.position.set(-4.0, 8 + coreHeight / 2, 0);
+    leftGlassMesh.castShadow = true;
+    leftGlassMesh.receiveShadow = true;
+    leftGlassMesh.userData = {
+      name: "Low-E Triple Silver Glass (West)",
+      material: "Argon-insulated reflective glass facade panel",
+      rating: "Protects against solar glare and structural heat gain."
     };
+
+    const rightGlassMesh = new THREE.Mesh(rightGlassGeo, curtainGlassMat);
+    rightGlassMesh.position.set(4.0, 8 + coreHeight / 2, 0);
+    rightGlassMesh.castShadow = true;
+    rightGlassMesh.receiveShadow = true;
+    rightGlassMesh.userData = {
+      name: "Low-E Triple Silver Glass (East)",
+      material: "Argon-insulated reflective glass facade panel",
+      rating: "Protects against solar glare and structural heat gain."
+    };
+
+    const backGlassMesh = new THREE.Mesh(backGlassGeo, curtainGlassMat);
+    backGlassMesh.position.set(0, 8 + coreHeight / 2, -4.0);
+    backGlassMesh.castShadow = true;
+    backGlassMesh.receiveShadow = true;
+    backGlassMesh.userData = {
+      name: "Low-E Triple Silver Glass (North)",
+      material: "Argon-insulated reflective glass facade panel",
+      rating: "Protects against solar glare and structural heat gain."
+    };
+
+    const frontGlassMesh = new THREE.Mesh(frontGlassGeo, curtainGlassMat);
+    frontGlassMesh.position.set(0, 8 + coreHeight / 2, 3.2); // Recessed by 0.8m!
+    frontGlassMesh.castShadow = true;
+    frontGlassMesh.receiveShadow = true;
+    frontGlassMesh.userData = {
+      name: "Low-E Triple Silver Glass (Recessed Front)",
+      material: "Premium recessed high-performance monolithic glazing envelope",
+      rating: "Elegant architectural recess, providing solar shading and unique shadow detail."
+    };
+
+    const leftColMesh = new THREE.Mesh(frontColumnGeo, podiumCrimsonMat);
+    leftColMesh.position.set(-3.6, 8 + coreHeight / 2, 3.65);
+    leftColMesh.castShadow = true;
+    leftColMesh.receiveShadow = true;
+    leftColMesh.userData = {
+      name: "Left Cladded Front Column Pilaster",
+      material: "Solid core composite metal cladding panel",
+      rating: "Ties structural framing to the outer podium envelope seamlessly."
+    };
+
+    const rightColMesh = new THREE.Mesh(frontColumnGeo, podiumCrimsonMat);
+    rightColMesh.position.set(3.6, 8 + coreHeight / 2, 3.65);
+    rightColMesh.castShadow = true;
+    rightColMesh.receiveShadow = true;
+    rightColMesh.userData = {
+      name: "Right Cladded Front Column Pilaster",
+      material: "Solid core composite metal cladding panel",
+      rating: "Ties structural framing to the outer podium envelope seamlessly."
+    };
+
     if (constructionPhase === "facade" || constructionPhase === "finishing") {
-      buildingGroup.add(towerMesh);
-      addWireframeOverlay(towerMesh, 0x0ea5e9);
+      buildingGroup.add(leftGlassMesh);
+      buildingGroup.add(rightGlassMesh);
+      buildingGroup.add(backGlassMesh);
+      buildingGroup.add(frontGlassMesh);
+      buildingGroup.add(leftColMesh);
+      buildingGroup.add(rightColMesh);
+      
+      addWireframeOverlay(leftGlassMesh, 0x0ea5e9);
+      addWireframeOverlay(rightGlassMesh, 0x0ea5e9);
+      addWireframeOverlay(backGlassMesh, 0x0ea5e9);
+      addWireframeOverlay(frontGlassMesh, 0x0ea5e9);
+      addWireframeOverlay(leftColMesh, 0xbae6fd);
+      addWireframeOverlay(rightColMesh, 0xbae6fd);
     }
 
     // --- 6. TOWER FLOOR SLABS (Visible inside transparent glass) ---
@@ -722,10 +851,12 @@ export default function ThreeCanvas({
       // Create vertical grids
       for (let m = 0; m <= 8; m++) {
         const xOffset = -4 + (m * 8) / 8;
-        // Front face mullions
-        const vMullF = new THREE.Mesh(verticalMullionGeo, mullionMat);
-        vMullF.position.set(xOffset, coreHeight / 2, 4.02);
-        mullionGroup.add(vMullF);
+        // Front face mullions (only if inside recessed glazed area)
+        if (xOffset > -3.8 && xOffset < 3.8) {
+          const vMullF = new THREE.Mesh(verticalMullionGeo, mullionMat);
+          vMullF.position.set(xOffset, coreHeight / 2, 3.22);
+          mullionGroup.add(vMullF);
+        }
 
         // Back face mullions
         const vMullB = new THREE.Mesh(verticalMullionGeo, mullionMat);
@@ -746,12 +877,15 @@ export default function ThreeCanvas({
       }
 
       // Create horizontal bands
+      const frontHorizontalMullionGeo = new THREE.BoxGeometry(7.18, 0.05, 0.04);
+      geometriesToDispose.push(frontHorizontalMullionGeo);
+
       for (let h = 0; h <= floorCount; h++) {
         const hOffset = (h * coreHeight) / floorCount;
         
-        // Front
-        const hMullF = new THREE.Mesh(horizontalMullionGeo, mullionMat);
-        hMullF.position.set(0, hOffset, 4.02);
+        // Front (recessed and sized to prevent overlapping front corner columns)
+        const hMullF = new THREE.Mesh(frontHorizontalMullionGeo, mullionMat);
+        hMullF.position.set(0, hOffset, 3.22);
         mullionGroup.add(hMullF);
 
         // Back
@@ -849,16 +983,62 @@ export default function ThreeCanvas({
 
     // --- 9. GRAND GLASS LOBBY (Ground Floor) & INTERIOR DETAILS ---
     if (constructionPhase === "facade" || constructionPhase === "finishing") {
-      const lobbyMesh = new THREE.Mesh(lobbyGeo, spiderLobbyMat);
-      lobbyMesh.position.set(0, lobbyHeight / 2, 0);
-      lobbyMesh.castShadow = true;
-      lobbyMesh.userData = {
-        name: "Grand Spider-Supported Entrance Lobby",
-        material: "Low-iron clear monolithic glazing envelope with premium stainless steel point spider fixtures",
-        rating: "8.2m clear vertical height layout. Maximizes daylight penetration to lobby space, reducing day power loads."
+      const leftLobbyGlassGeo = new THREE.BoxGeometry(0.1, lobbyHeight, 8.15);
+      const rightLobbyGlassGeo = new THREE.BoxGeometry(0.1, lobbyHeight, 8.15);
+      const backLobbyGlassGeo = new THREE.BoxGeometry(8.15, lobbyHeight, 0.1);
+      const frontLobbyGlassGeo = new THREE.BoxGeometry(8.15, lobbyHeight, 0.1);
+      const lobbyColGeo = new THREE.BoxGeometry(0.8, lobbyHeight, 0.9);
+      
+      geometriesToDispose.push(leftLobbyGlassGeo, rightLobbyGlassGeo, backLobbyGlassGeo, frontLobbyGlassGeo, lobbyColGeo);
+      
+      const leftLobbyGlass = new THREE.Mesh(leftLobbyGlassGeo, spiderLobbyMat);
+      leftLobbyGlass.position.set(-4.075, lobbyHeight / 2, 0);
+      leftLobbyGlass.castShadow = true;
+      leftLobbyGlass.receiveShadow = true;
+      
+      const rightLobbyGlass = new THREE.Mesh(rightLobbyGlassGeo, spiderLobbyMat);
+      rightLobbyGlass.position.set(4.075, lobbyHeight / 2, 0);
+      rightLobbyGlass.castShadow = true;
+      rightLobbyGlass.receiveShadow = true;
+      
+      const backLobbyGlass = new THREE.Mesh(backLobbyGlassGeo, spiderLobbyMat);
+      backLobbyGlass.position.set(0, lobbyHeight / 2, -4.075);
+      backLobbyGlass.castShadow = true;
+      backLobbyGlass.receiveShadow = true;
+      
+      const frontLobbyGlass = new THREE.Mesh(frontLobbyGlassGeo, spiderLobbyMat);
+      frontLobbyGlass.position.set(0, lobbyHeight / 2, 3.275); // Recessed to match tower above!
+      frontLobbyGlass.castShadow = true;
+      frontLobbyGlass.receiveShadow = true;
+      frontLobbyGlass.userData = {
+        name: "Lobby Front Glazing Envelope",
+        material: "Point spider-supported clear glass structural facade",
+        rating: "8.2m clear vertical height layout. Recessed facade protects lobby from direct glare."
       };
-      buildingGroup.add(lobbyMesh);
-      addWireframeOverlay(lobbyMesh, 0xbae6fd);
+      
+      const leftLobbyCol = new THREE.Mesh(lobbyColGeo, podiumCrimsonMat);
+      leftLobbyCol.position.set(-3.675, lobbyHeight / 2, 3.725);
+      leftLobbyCol.castShadow = true;
+      leftLobbyCol.receiveShadow = true;
+      
+      const rightLobbyCol = new THREE.Mesh(lobbyColGeo, podiumCrimsonMat);
+      rightLobbyCol.position.set(3.675, lobbyHeight / 2, 3.725);
+      rightLobbyCol.castShadow = true;
+      rightLobbyCol.receiveShadow = true;
+      
+      buildingGroup.add(leftLobbyGlass);
+      buildingGroup.add(rightLobbyGlass);
+      buildingGroup.add(backLobbyGlass);
+      buildingGroup.add(frontLobbyGlass);
+      buildingGroup.add(leftLobbyCol);
+      buildingGroup.add(rightLobbyCol);
+      
+      addWireframeOverlay(leftLobbyGlass, 0xbae6fd);
+      addWireframeOverlay(rightLobbyGlass, 0xbae6fd);
+      addWireframeOverlay(backLobbyGlass, 0xbae6fd);
+      addWireframeOverlay(frontLobbyGlass, 0xbae6fd);
+      addWireframeOverlay(leftLobbyCol, 0xbae6fd);
+      addWireframeOverlay(rightLobbyCol, 0xbae6fd);
 
       // Realistic Lobby Interior details visible through the glass
       if (visualizationMode === "architectural") {
@@ -1045,7 +1225,7 @@ export default function ThreeCanvas({
 
       // Dynamic glass storefront windows cutout representations
       const storeF = new THREE.Mesh(storefrontGeo, curtainGlassMat);
-      storeF.position.set(-1.5, -2, 5.51);
+      storeF.position.set(-1.5, -2, 4.81); // Recessed from 5.51
       storeF.userData = {
         name: "Ground Retail Storefront Glass",
         material: "12mm monolithic safety structural glass panels with clear weatherproofing joints",
@@ -1054,7 +1234,7 @@ export default function ThreeCanvas({
       podiumMesh.add(storeF);
 
       const storeF2 = new THREE.Mesh(storefrontGeo, curtainGlassMat);
-      storeF2.position.set(-1.5, 2.5, 5.51);
+      storeF2.position.set(-1.5, 2.5, 4.81); // Recessed from 5.51
       storeF2.userData = {
         name: "Upper Retail Atrium Glass Wall",
         material: "Argon-filled Low-E double glazing unit matching the main tower facade spec",
@@ -1065,7 +1245,7 @@ export default function ThreeCanvas({
       // Backlit geometric louvers/slats
       for (let s = 0; s < 4; s++) {
         const slat = new THREE.Mesh(decorativeSlatGeo, louverBronzeMat);
-        slat.position.set(-4.8 + s * 1.5, 0, 5.52);
+        slat.position.set(-4.8 + s * 1.5, 0, 4.92); // Realigned to match recessed glass
         podiumMesh.add(slat);
       }
 
@@ -1583,6 +1763,19 @@ export default function ThreeCanvas({
 
       const elapsed = clock.getElapsedTime();
 
+      // Gentle scale-up entry transition on construction phase change
+      if (buildingGroupRef.current) {
+        const duration = 1.0; // 1 second smooth animation
+        if (elapsed < duration) {
+          const t = elapsed / duration;
+          const easeCubic = 1 - Math.pow(1 - t, 3); // cubic ease-out
+          const currentScale = 0.6 + 0.4 * easeCubic;
+          buildingGroupRef.current.scale.set(currentScale, currentScale, currentScale);
+        } else {
+          buildingGroupRef.current.scale.set(1, 1, 1);
+        }
+      }
+
       // Gentle auto-rotation
       if (buildingGroupRef.current && autoRotate) {
         buildingGroupRef.current.rotation.y += 0.0018;
@@ -1723,7 +1916,7 @@ export default function ThreeCanvas({
       materialsToDispose.forEach((mat) => mat.dispose());
       scene.clear();
     };
-  }, [visualizationMode, thermalOverlayActive, glassPreset, claddingPreset, vrModeActive, constructionPhase, shadowAnalysisActive, windTunnelActive]);
+  }, [visualizationMode, thermalOverlayActive, glassPreset, claddingPreset, vrModeActive, constructionPhase, shadowAnalysisActive, windTunnelActive, seasonMode]);
 
   // Handle Sun Position & Lighting adjustments
   useEffect(() => {
